@@ -11,7 +11,7 @@ const app = express()
 const port = 8000
 
 //routing static files (including images)
-app.use("/entryImage", express.static("uploads"))
+app.use("/static", express.static("uploads"))
 
 //body parser use to handle request
 app.use(express.json())
@@ -28,8 +28,8 @@ const storage = multer.diskStorage({
         cb(null, suffix + file.originalname)
     }
 })
-const upload = multer({storage: storage})
-const imageUpload = upload.array("images")
+const imageUpload = multer({storage: storage}).array("files")
+// const imageUpload = upload.array("images")
 
 
 //mongodb preferences
