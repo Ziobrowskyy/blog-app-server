@@ -28,8 +28,8 @@ const storage = multer.diskStorage({
         cb(null, suffix + file.originalname)
     }
 })
+
 const imageUpload = multer({storage: storage}).array("files")
-// const imageUpload = upload.array("images")
 
 
 //mongodb preferences
@@ -46,14 +46,9 @@ client.connect((err, db) => {
     const collection = database.collection(collectionName)
 
     //create post
-    app.post('/post', (req, res) => {
+    app.post('/post', imageUpload, (req, res) => {
 
-        console.log("Message arrived at POST:/post")
-        console.log(req.body)
-        const post = new Post(req.body)
-
-        console.log("Post to json")
-        console.log(JSON.stringify(post));
+        const post = new Post({...req.body, files: req.files})
 
         collection.insertOne(post).then(
             (successResult) => {
