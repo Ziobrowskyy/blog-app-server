@@ -1,4 +1,3 @@
-//mongodb preferences
 import {Collection, MongoClient, MongoError} from "mongodb";
 
 const mongoUrl = 'mongodb://localhost:27017'
