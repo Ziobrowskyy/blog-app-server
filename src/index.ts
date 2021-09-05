@@ -1,10 +1,9 @@
 import express from "express"
-import fs from "fs"
 import cors from "cors"
-import path from "path"
 import multer from "multer"
-import {MongoClient} from "mongodb"
-import {Post} from "./post"
+import * as Database from "./database"
+import * as api from "./api"
+import path from "path";
 
 //express app and port to run at
 const app = express()
@@ -31,150 +30,28 @@ const storage = multer.diskStorage({
 
 const imageUpload = multer({storage: storage}).array("files")
 
-
-//mongodb preferences
-const mongoUrl = 'mongodb://localhost:27017/'
-const dbName = 'portal'
-const collectionName = "entries"
-
-const client = new MongoClient(mongoUrl + dbName, {useNewUrlParser: true, useUnifiedTopology: true})
-
-client.connect((err, db) => {
-    if (err) throw err
-
-    const database = db.db(dbName)
-    const collection = database.collection(collectionName)
-
-    //create post
-    app.post('/post', imageUpload, (req, res) => {
-
-        const post = new Post({...req.body, files: req.files})
-
-        collection.insertOne(post).then(
-            (successResult) => {
-                res.status(200).json({
-                    "success": true,
-                    "message": successResult
-                })
-            },
-            (failMessage) => {
-                res.status(400).json({
-                    "success": false,
-                    "message": "Failed to add data to database. " + failMessage
-                })
-            })
-
-    })
+app.use(express.static(path.join(__dirname, "../../blog-app/build")));
 
 
-    //update post
-    app.put('/post/:id', (req, res) => {
-        const id = req.body.id
-        if (!req.body.params.id) {
-            res.status(400).json({
-                "success": false,
-                "message": "Missing body parameters"
-            })
-        }
-        collection.updateOne(
-            {_id: req.body.id},
-            {}
-        ).then(
-            (successResult) => {
-                res.status(200).json({
-                    "success": true,
-                    "message": successResult
-                })
-            },
-            (failMessage) => {
-                res.status(400).json({
-                    "success": false,
-                    "message": "Failed to update. " + failMessage
-                })
-            })
-    })
+Database.init(err => {
+    console.warn("Failed to connect to database!")
+    throw(err)
+})
 
-    //delete post
-    app.delete('/post/:id', async (req, res) => {
-        const result = await collection.deleteOne({_id: req.body.id}).then(
-            (successResult) => {
-                res.status(200).json({
-                    "success": true,
-                    "message": successResult
-                })
-            },
-            (failMessage) => {
-                res.status(400).json({
-                    "success": false,
-                    "message": "Failed to delete document. " + failMessage
-                })
-            })
+app.post("/api/post", imageUpload, api.createPost)
+app.put("/api/post/:id", api.updatePost)
+app.delete("/api/post/:id", api.deletePost)
+app.get("/api/post/:id", api.getPost)
+app.get("/api/posts", api.getAllPosts)
+app.get("/api/", api.testConnection)
 
-    })
-    //get post
-    app.get('/post/:id', async (req, res) => {
-        collection.findOne({_id: req.body.id}).then(
-            (successResult) => {
-                res.status(200).json({
-                    "success": true,
-                    "message": successResult,
-                    "data": JSON.stringify(successResult)
-                })
-            },
-            (failMessage) => {
-                res.status(400).json({
-                    "success": false,
-                    "message": "Failed to find document. " + failMessage
-                })
-            })
+// app.get("/*", (req, res) => {
+//     console.log("request on /*")
+//     res.sendFile(path.join(__dirname, 'build', 'index.html'));
+// });
 
-    })
-
-    app.get('/posts', async (req, res) => {
-        const documents = await collection.find().toArray()
-        if (documents) {
-            res.status(200).json({
-                "success": true,
-                "message": "",
-                "data": JSON.stringify(documents)
-            })
-        } else {
-            res.status(400).json({
-                "success": false,
-                "message": "Failed to find documents"
-            })
-        }
-    })
-
-    app.get("/", async (req, res) => {
-        console.log("access on / route")
-        // res.status(200).json({
-        //     "success": true,
-        //     "data": new Date().toString()
-        // })
-        const query = {}
-
-        const options = {}
-
-        const cursor = await collection.find(query, options)
-
-        const data = await cursor.map(it => {
-            return {
-                title: it.title,
-                content: it.content,
-                type: it.content,
-                images: it.images
-            }
-        }).toArray()
-
-        // console.log(`Entries: ${data}`)
-        // console.log(`Entries found: ${data.length}`)
-        //
-        // res.render("wpisy", { data })
-    })
-
-    app.listen(port, () => {
-        console.log(`Server is running on port ${port}`)
-    })
-
+app.listen(port, () => {
+    console.log(__dirname)
+    // console.log(path.join(__dirname, "..", "..", "blog-app/build"))
+    console.log(`Server is running on port ${port}`)
 })

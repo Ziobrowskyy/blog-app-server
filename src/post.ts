@@ -1,7 +1,7 @@
 interface BodyType {
     title: string
     content: string
-    files: Array<Express.Multer.File>
+    files: Array<Express.Multer.File> | undefined
 }
 
 class Post {
@@ -24,4 +24,4 @@ class Post {
     }
 }
 
-export {Post}
+export default Post
