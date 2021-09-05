@@ -1,5 +1,8 @@
 #uploaded files to server
 uploads/*
+
+/.idea
+
 # Logs
 logs
 *.log
@@ -104,7 +107,5 @@ dist
 
 # TernJS port file
 .tern-port
-/.idea/vcs.xml
-.idea/workspace.xml
-.idea/*
+
 
